@@ -268,7 +268,7 @@ const defaultStrat = function (parentVal: any, childVal: any): any {
 }
 
 /**
- * Validate component names
+  检查options.components里面的key名
  */
 function checkComponents (options: Object) {
   for (const key in options.components) {
@@ -277,6 +277,7 @@ function checkComponents (options: Object) {
 }
 
 export function validateComponentName (name: string) {
+  //组件名格式校验
   if (!new RegExp(`^[a-zA-Z][\\-\\.0-9_${unicodeRegExp.source}]*$`).test(name)) {
     warn(
       'Invalid component name: "' + name + '". Component names ' +
@@ -291,10 +292,8 @@ export function validateComponentName (name: string) {
   }
 }
 
-/**
- * Ensure all props option syntax are normalized into the
- * Object-based format.
- */
+
+//option是child
 function normalizeProps (options: Object, vm: ?Component) {
   const props = options.props
   if (!props) return
@@ -305,9 +304,10 @@ function normalizeProps (options: Object, vm: ?Component) {
     while (i--) {
       val = props[i]
       if (typeof val === 'string') {
+        //驼峰化
         name = camelize(val)
         res[name] = { type: null }
-      } else if (process.env.NODE_ENV !== 'production') {
+      } else if (process.env.NODE_ENV !== 'production') { //如果是开发环境
         warn('props must be strings when using array syntax.')
       }
     }
@@ -326,6 +326,7 @@ function normalizeProps (options: Object, vm: ?Component) {
       vm
     )
   }
+  //即使在外层是个数组机构，最后这一个options props还是回归对象
   options.props = res
 }
 
@@ -333,9 +334,9 @@ function normalizeProps (options: Object, vm: ?Component) {
  * Normalize all injections into Object-based format
  */
 function normalizeInject (options: Object, vm: ?Component) {
-  const inject = options.inject
+  const inject = options.inject 
   if (!inject) return
-  const normalized = options.inject = {}
+  const normalized = options.inject = {} //直接把options.inject指向一个空指针
   if (Array.isArray(inject)) {
     for (let i = 0; i < inject.length; i++) {
       normalized[inject[i]] = { from: inject[i] }
@@ -381,19 +382,18 @@ function assertObjectType (name: string, value: any, vm: ?Component) {
   }
 }
 
-/**
- * Merge two option objects into a new one.
- * Core utility used in both instantiation and inheritance.
- */
+//理想情况下，parent与child都是options
 export function mergeOptions (
   parent: Object,
   child: Object,
   vm?: Component
 ): Object {
+  //如果是开发模式下
   if (process.env.NODE_ENV !== 'production') {
     checkComponents(child)
   }
 
+  //如果child还是vue实例，那么让它成为options
   if (typeof child === 'function') {
     child = child.options
   }

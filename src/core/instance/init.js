@@ -12,31 +12,30 @@ import { extend, mergeOptions, formatComponentName } from '../util/index'
 
 let uid = 0
 
+//初始化时真正执行的函数
 export function initMixin (Vue: Class<Component>) {
+  //初始化时执行的函数，options是new vue({这里的东西})
   Vue.prototype._init = function (options?: Object) {
+    //vm vue的实例
     const vm: Component = this
-    // a uid
+    // 执行一次new Vue，新的Vue实例的_uid就会与之前不一样，而且加1
     vm._uid = uid++
 
     let startTag, endTag
-    /* istanbul ignore if */
+    //如果是开发模式下，而且开启了记录性能，
     if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
       startTag = `vue-perf-start:${vm._uid}`
       endTag = `vue-perf-end:${vm._uid}`
       mark(startTag)
     }
 
-    // a flag to avoid this being observed
     vm._isVue = true
-    // merge options
-    if (options && options._isComponent) {
-      // optimize internal component instantiation
-      // since dynamic options merging is pretty slow, and none of the
-      // internal component options needs special treatment.
+
+    if (options && options._isComponent) { //如果有option，而且配置里_isComponent为true
       initInternalComponent(vm, options)
     } else {
       vm.$options = mergeOptions(
-        resolveConstructorOptions(vm.constructor),
+        resolveConstructorOptions(vm.constructor), //vm.constructor就是vue的原型
         options || {},
         vm
       )
@@ -72,17 +71,22 @@ export function initMixin (Vue: Class<Component>) {
 }
 
 export function initInternalComponent (vm: Component, options: InternalComponentOptions) {
+  //看上去这里没有对data进行处理，而且主要是针对options的parent，进行的初始化
+
+  //这里把vue类的默认options拿了过来
   const opts = vm.$options = Object.create(vm.constructor.options)
   // doing this because it's faster than dynamic enumeration.
   const parentVnode = options._parentVnode
-  opts.parent = options.parent
-  opts._parentVnode = parentVnode
 
-  const vnodeComponentOptions = parentVnode.componentOptions
-  opts.propsData = vnodeComponentOptions.propsData
-  opts._parentListeners = vnodeComponentOptions.listeners
-  opts._renderChildren = vnodeComponentOptions.children
-  opts._componentTag = vnodeComponentOptions.tag
+  opts.parent = options.parent
+  opts._parentVnode = parentVnode //用到参数options
+
+  const vnodeComponentOptions = parentVnode.componentOptions //用到参数options
+
+  opts.propsData = vnodeComponentOptions.propsData //用到参数options
+  opts._parentListeners = vnodeComponentOptions.listeners //用到参数options
+  opts._renderChildren = vnodeComponentOptions.children //用到参数options
+  opts._componentTag = vnodeComponentOptions.tag //用到参数options
 
   if (options.render) {
     opts.render = options.render
@@ -90,31 +94,32 @@ export function initInternalComponent (vm: Component, options: InternalComponent
   }
 }
 
-export function resolveConstructorOptions (Ctor: Class<Component>) {
+export function resolveConstructorOptions (Ctor: Class<Component>) { //Ctor就是vue的原型
   let options = Ctor.options
-  if (Ctor.super) {
+  //如果vue继承了某些父类的话
+  if (Ctor.super) { 
     const superOptions = resolveConstructorOptions(Ctor.super)
+    //获取vue的原型的superOptions
     const cachedSuperOptions = Ctor.superOptions
     if (superOptions !== cachedSuperOptions) {
-      // super option changed,
-      // need to resolve new options.
       Ctor.superOptions = superOptions
-      // check if there are any late-modified/attached options (#4976)
+      //获取Ctor.options与Ctor.sealedOptions的差异，以Ctor.options为准
       const modifiedOptions = resolveModifiedOptions(Ctor)
       // update base extend options
       if (modifiedOptions) {
+        //把modifiedOptions合到Ctor.extendOptions
         extend(Ctor.extendOptions, modifiedOptions)
       }
-      options = Ctor.options = mergeOptions(superOptions, Ctor.extendOptions)
+      options = Ctor.options = mergeOptions(superOptions, Ctor.extendOptions) //Ctor.options来源
       if (options.name) {
-        options.components[options.name] = Ctor
+        options.components[options.name] = Ctor  //options:{components:{test:Ctor},name:'test'}
       }
     }
   }
   return options
 }
 
-function resolveModifiedOptions (Ctor: Class<Component>): ?Object {
+function resolveModifiedOptions (Ctor: Class<Component>): ?Object { //Ctor就是vue的原型
   let modified
   const latest = Ctor.options
   const sealed = Ctor.sealedOptions
